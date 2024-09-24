@@ -1,7 +1,8 @@
-import { Request, Response } from 'express'
+import { Request, Response, Router } from 'express'
 import Resource from '../models/resource.model'
 import Project from '../models/project.model'
 import logger from '../utils/loggers.utils'
+
 
 // Create: Tạo mới một resource
 export const createResource = async (req: Request, res: Response): Promise<void> => {
@@ -29,19 +30,18 @@ export const createResource = async (req: Request, res: Response): Promise<void>
 }
 
 // Read: Lấy danh sách tất cả resource
-export const getResources = async (req: Request, res: Response): Promise<void> => {
-  try {
-    await global.initDB()
-    const resources = await Resource.find()
+// export const getResources = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     await global.initDB()
+//     const resources = await Resource.find()
     
-    console.log("check===>",resources)
-    logger.info('Fetched all resources')
-    res.status(200).json(resources)
-  } catch (err) {
-    logger.error('Error fetching resources: %s', err.message)
-    res.status(500).send('Internal Server Error')
-  }
-}
+//     logger.info('Fetched all resources')
+//     res.status(200).json(resources)
+//   } catch (err) {
+//     logger.error('Error fetching resources: %s', err.message)
+//     res.status(500).send('Internal Server Error')
+//   }
+// }
 
 // Read: Lấy resource theo ID
 export const getResourceById = async (req: Request, res: Response): Promise<void> => {
@@ -65,6 +65,37 @@ export const getResourceById = async (req: Request, res: Response): Promise<void
     res.status(500).send('Internal Server Error')
   }
 }
+
+// Search: Tìm kiếm resource theo tiêu chí
+export const searchResources = async (req: Request, res: Response): Promise<void> => {
+  try {
+    await global.initDB(); // Khởi tạo kết nối đến database
+
+    // Khởi tạo đối tượng search với các điều kiện tìm kiếm
+    const search: any = {};
+
+    // Kiểm tra nếu có trường 'name' trong query string và tìm kiếm theo tên hoặc số điện thoại
+    if (req.query.search) {
+      const searchValue = req.query.search;
+      search.$or = [
+        { name: { $regex: searchValue, $options: 'i' } }, // Tìm theo tên không phân biệt hoa thường
+        { phoneNumber: { $regex: searchValue, $options: 'i' } }, // Tìm theo số điện thoại (dùng regex để tìm các chuỗi số)
+        { email: { $regex: searchValue, $options: 'i' } },
+        { identityCard: { $regex: searchValue, $options: 'i' } }
+      ];
+    }
+
+    // Thực hiện tìm kiếm dựa trên các tiêu chí
+    const resources = await Resource.find(search);
+
+    res.status(200).json(resources?.length === 0 ? []:resources);
+  } catch (err) {
+    // Xử lý lỗi trong quá trình tìm kiếm
+    logger.error('Lỗi khi tìm kiếm resource: %s', err.message);
+    res.status(500).send('Lỗi hệ thống');
+  }
+};
+
 
 // Update: Cập nhật resource theo ID
 export const updateResource = async (req: Request, res: Response): Promise<void> => {

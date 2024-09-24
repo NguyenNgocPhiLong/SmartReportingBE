@@ -1,10 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express'
 import {
   createResource,
-  getResources,
+  // getResources,
   getResourceById,
   updateResource,
-  deleteResource
+  deleteResource,
+  searchResources
 } from '../controllers/resource.controller'
 
 const router = express.Router()
@@ -21,7 +22,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // Read all
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getResources(req, res)
+    await searchResources(req,res)
   } catch (error) {
     next(error)
   }
